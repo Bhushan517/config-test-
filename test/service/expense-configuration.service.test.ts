@@ -135,6 +135,50 @@ describe('ExpenseConfigurationService', () => {
         expect(result.status).toBe(500);
         expect(result.response.message).toBe('Internal Server Error');
       });
+
+    it('should filter by name', async () => {
+      const mockRequest: any = {
+        params: { program_id: 'program-1' },
+        query: { name: 'Test' },
+      };
+      const mockTraceId = 'trace-1';
+      (ExpenseConfigurationModel.findAndCountAll as jest.Mock).mockResolvedValue({ count: 0, rows: [] });
+
+      await ExpenseConfigurationService.getExpenseConfigurations({
+        request: mockRequest,
+        traceId: mockTraceId,
+      });
+
+      expect(ExpenseConfigurationModel.findAndCountAll).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            name: 'Test',
+          }),
+        })
+      );
+    });
+
+    it('should filter by is_enabled', async () => {
+      const mockRequest: any = {
+        params: { program_id: 'program-1' },
+        query: { is_enabled: 'true' },
+      };
+      const mockTraceId = 'trace-1';
+      (ExpenseConfigurationModel.findAndCountAll as jest.Mock).mockResolvedValue({ count: 0, rows: [] });
+
+      await ExpenseConfigurationService.getExpenseConfigurations({
+        request: mockRequest,
+        traceId: mockTraceId,
+      });
+
+      expect(ExpenseConfigurationModel.findAndCountAll).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            is_enabled: true,
+          }),
+        })
+      );
+    });
   });
 
   describe('getExpenseConfigurationById', () => {
@@ -259,6 +303,28 @@ describe('ExpenseConfigurationService', () => {
         expect(result.status).toBe(400);
         expect(result.response.message).toBe('hierarchy_ids are required and must be a non-empty array');
       });
+
+      it('should return 409 if config with same hierarchy exists', async () => {
+        const mockRequest: any = {
+          params: { program_id: 'program-1' },
+          body: { name: 'New Config', hierarchy_ids: ['h-1'] },
+        };
+        const mockUser = { sub: 'user-1', preferred_username: 'testuser' };
+        const mockTraceId = 'trace-3';
+
+        (ExpenseConfigurationModel.findAll as jest.Mock)
+          .mockResolvedValueOnce([]) // for name check
+          .mockResolvedValueOnce([{ id: 'config-1' }]); // for hierarchy check
+
+        const result = await ExpenseConfigurationService.createExpenseConfiguration({
+          request: mockRequest,
+          user: mockUser,
+          traceId: mockTraceId,
+        });
+
+        expect(result.status).toBe(409);
+        expect(result.response.message).toBe('An Expense configuration with the same hierarchy already exists.');
+      });
   });
 
   describe('updateExpenseConfiguration', () => {
@@ -316,6 +382,33 @@ describe('ExpenseConfigurationService', () => {
 
         expect(result.status).toBe(400);
         expect(result.response.message).toBe('Expense configuration not found.');
+      });
+
+      it('should return 409 if hierarchy conflict exists', async () => {
+        const mockRequest: any = {
+          params: { id: 'config-1', program_id: 'program-1' },
+          body: { hierarchy_ids: ['h-2'] },
+        };
+        const mockUser = { sub: 'user-1', preferred_username: 'testuser' };
+        const mockTraceId = 'trace-4';
+        const mockExistingConfig = {
+          id: 'config-1',
+          hierarchy_ids: ['h-1'],
+          update: jest.fn(),
+          toJSON: () => ({}),
+        };
+
+        (ExpenseConfigurationModel.findOne as jest.Mock).mockResolvedValue(mockExistingConfig);
+        (ExpenseConfigurationModel.findAll as jest.Mock).mockResolvedValue([{ id: 'config-2' }]); // Conflict
+
+        const result = await ExpenseConfigurationService.updateExpenseConfiguration({
+          request: mockRequest,
+          user: mockUser,
+          traceId: mockTraceId,
+        });
+
+        expect(result.status).toBe(409);
+        expect(result.response.message).toBe('An expense configuration with the same hierarchy IDs already exists');
       });
   });
 
