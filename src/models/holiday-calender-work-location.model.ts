@@ -1,0 +1,66 @@
+import { DataTypes, Model } from 'sequelize';
+import { sequelize } from '../config/instance';
+import { convertEmptyStringsToNull } from '../hooks/convertEmptyStringsToNull';
+import { beforeSave } from '../hooks/timeFormatHook';
+import HolidayCalendar from './holiday-calendar.model';
+
+class HolidayCalendarWorkLocation extends Model {
+  work_location_id: any;
+}
+
+HolidayCalendarWorkLocation.init({
+    id: {
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
+        primaryKey: true,
+    },
+    holiday_calendar_id: {
+        type: DataTypes.UUID,
+        allowNull: true,
+        references: {
+            model: 'holiday_calendar',
+            key: 'id', 
+        }
+    },
+    work_location_id: {
+        type: DataTypes.UUID,
+        allowNull: true
+    },
+    created_on: {
+        type: DataTypes.BIGINT.UNSIGNED,
+        allowNull: true,
+    },
+    updated_on: {
+        type: DataTypes.BIGINT.UNSIGNED,
+        allowNull: true,
+    },
+    created_by: {
+        type: DataTypes.UUID,
+        allowNull: true,
+    },
+    updated_by: {
+        type: DataTypes.UUID,
+        allowNull: true,
+    },
+}, {
+    sequelize,
+    modelName: 'holiday_calendar_work_location',
+    tableName: 'holiday_calendar_work_location',
+    timestamps: false,
+    hooks: {
+        beforeValidate: (instance) => {
+            convertEmptyStringsToNull(instance);
+        },
+        beforeSave: (instance) => {
+            beforeSave(instance);
+        },
+    },
+});
+
+HolidayCalendarWorkLocation.belongsTo(HolidayCalendar, {
+    foreignKey: 'holiday_calendar_id',
+    as: 'holiday_calendar',
+});
+sequelize.sync();
+
+export default HolidayCalendarWorkLocation;

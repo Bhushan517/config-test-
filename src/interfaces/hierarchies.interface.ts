@@ -1,0 +1,31 @@
+export interface hierarchiesData {
+  parent_hierarchy_name: any;
+  parent_hierarchy_code:any;
+  id: string;
+  parent_hierarchy_id?: string; 
+  program_id: string;
+  name: string;
+  rate_model?: string;
+  created_on?: bigint;
+  updated_on?: bigint;
+  created_by?: string; 
+  updated_by?: string; 
+  code?: string; 
+  is_deleted?: boolean; 
+  unit_of_measure?: any; 
+  default_timezone?: string; 
+  default_date_format?: string; 
+  default_time_format?: string; 
+  default_currency?: string; 
+  default_language?: string;
+  is_vendor_neutral_program?: boolean; 
+  is_hide_candidate_img?: boolean; 
+  manage_tax?: any; 
+  manage_adjustment?: any; 
+  custom_fields?: any; 
+  is_enabled: boolean; 
+  is_not_editable:boolean;
+  support_email:string;
+  address:any;
+  managed_by?: string;
+}
